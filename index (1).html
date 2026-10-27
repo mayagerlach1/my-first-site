@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BeatLab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #08080f;
+      --panel: #11111c;
+      --cell: #1b1b2a;
+      --border: rgba(255,255,255,0.08);
+      --text: #eeedf7;
+      --muted: #8a88a3;
+      --accent: #8b5cf6;
+      --accent2: #22d3ee;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(139,92,246,0.18), transparent 60%),
+                  radial-gradient(900px 500px at 110% 110%, rgba(34,211,238,0.12), transparent 60%),
+                  var(--bg);
+      color: var(--text);
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      min-height: 100vh;
+      -webkit-user-select: none; user-select: none;
+    }
+    .wrap { max-width: 1000px; margin: 0 auto; padding: 32px 16px 48px; }
+
+    header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
+    h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); letter-spacing: -0.05em; line-height: 1; }
+    h1 span {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .sub { color: var(--muted); margin-top: 6px; }
+    .hint { font-family: "JetBrains Mono", monospace; font-size: 0.78rem; color: var(--muted); }
+    kbd { border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; background: var(--panel); }
+
+    canvas#viz {
+      width: 100%; height: 90px; display: block;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+      margin-bottom: 16px;
+    }
+
+    .controls {
+      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
+      padding: 12px; margin-bottom: 16px;
+    }
+    button, select {
+      font: inherit; font-size: 0.92rem; color: var(--text);
+      background: var(--cell); border: 1px solid var(--border);
+      padding: 9px 14px; border-radius: 10px; cursor: pointer;
+      transition: transform 0.1s, background 0.2s, border-color 0.2s;
+    }
+    button:hover, select:hover { border-color: rgba(255,255,255,0.25); }
+    button:active { transform: scale(0.96); }
+    #play {
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      border: none; font-weight: 700; min-width: 108px; color: #fff;
+      box-shadow: 0 6px 24px rgba(139,92,246,0.4);
+    }
+    #play.on { background: #ef4444; box-shadow: 0 6px 24px rgba(239,68,68,0.4); }
+    .tempo { display: flex; align-items: center; gap: 10px; font-family: "JetBrains Mono", monospace; font-size: 0.85rem; }
+    .tempo b { min-width: 34px; display: inline-block; color: var(--accent2); }
+    input[type=range] { accent-color: var(--accent); width: 120px; }
+    .spacer { flex: 1; }
+
+    .board {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
+      padding: 14px; overflow-x: auto;
+    }
+    .grid { display: grid; grid-template-columns: 96px repeat(16, minmax(30px, 1fr)); gap: 6px; min-width: 640px; }
+    .label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 0.85rem; font-weight: 500; cursor: pointer; padding-right: 4px;
+      border-radius: 8px;
+    }
+    .label i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); box-shadow: 0 0 10px var(--c); flex: none; }
+    .label:hover { color: #fff; }
+    .cell {
+      aspect-ratio: 1; border-radius: 8px; background: var(--cell);
+      border: 1px solid transparent; cursor: pointer; touch-action: none;
+      transition: background 0.08s, transform 0.08s, box-shadow 0.15s;
+    }
+    .cell.beat { background: #232336; }
+    .cell.gap { margin-left: 6px; }
+    .cell:hover { border-color: rgba(255,255,255,0.2); }
+    .cell.on { background: var(--c); box-shadow: 0 0 14px -2px var(--c); }
+    .cell.now { border-color: rgba(255,255,255,0.55); }
+    .cell.on.now { transform: scale(1.12); box-shadow: 0 0 24px 2px var(--c); }
+    .steps { display: contents; }
+    .dot { height: 6px; border-radius: 3px; background: var(--cell); margin-top: 4px; }
+    .dot.gap { margin-left: 6px; }
+    .dot.now { background: var(--accent2); box-shadow: 0 0 10px var(--accent2); }
+
+    .toast {
+      position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 30px);
+      background: #fff; color: #111; padding: 10px 18px; border-radius: 999px;
+      font-weight: 500; opacity: 0; transition: 0.25s; pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+    footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 28px; font-family: "JetBrains Mono", monospace; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Beat<span>Lab</span></h1>
+        <p class="sub">Click the squares to make a beat. Press play.</p>
+      </div>
+      <div class="hint"><kbd>Space</kbd> play / stop &nbsp;·&nbsp; click a name to hear it</div>
+    </header>
+
+    <canvas id="viz"></canvas>
+
+    <div class="controls">
+      <button id="play">▶ Play</button>
+      <div class="tempo">BPM <input id="bpm" type="range" min="60" max="180" value="100"><b id="bpmVal">100</b></div>
+      <select id="preset">
+        <option value="">Presets…</option>
+        <option value="boombap">Boom Bap</option>
+        <option value="house">House</option>
+        <option value="trap">Trap</option>
+        <option value="reggaeton">Reggaeton</option>
+      </select>
+      <div class="spacer"></div>
+      <button id="random">🎲 Randomize</button>
+      <button id="clear">Clear</button>
+      <button id="share">🔗 Share</button>
+    </div>
+
+    <div class="board"><div class="grid" id="grid"></div></div>
+
+    <footer>Every sound is generated live in your browser · no files, no server</footer>
+  </div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ---------- Instruments ----------
+    const ROWS = [
+      { name: "Kick",     color: "#ff4d6d" },
+      { name: "Snare",    color: "#ff9f43" },
+      { name: "Clap",     color: "#feca57" },
+      { name: "Hi-hat",   color: "#1dd1a1" },
+      { name: "Open hat", color: "#22d3ee" },
+      { name: "Tom",      color: "#54a0ff" },
+      { name: "Bass",     color: "#8b5cf6" },
+      { name: "Pluck",    color: "#f472b6" }
+    ];
+    const STEPS = 16;
+    let grid = ROWS.map(() => Array(STEPS).fill(false));
+
+    const PRESETS = {
+      boombap:   { bpm: 90,  rows: ["x.......x.x.....", "....x.......x...", "................", "x.x.x.x.x.x.x.x.", "..............x.", "................", "x.....x...x.....", "...x......x...x."] },
+      house:     { bpm: 124, rows: ["x...x...x...x...", "................", "....x.......x...", "..x...x...x...x.", "..x.......x.....", "................", "..x...x...x...x.", "x..x..x...x..x.."] },
+      trap:      { bpm: 140, rows: ["x......x..x.....", "........x.......", "........x.......", "xxxxxxx.xxx.xxxx", "................", ".............xx.", "x......x..x.....", "................"] },
+      reggaeton: { bpm: 96,  rows: ["x...x...x...x...", "...x..x....x..x.", "................", "x.x.x.x.x.x.x.x.", "................", "................", "x..x..x.x..x..x.", "......x.......x."] }
+    };
+
+    // ---------- Build the grid ----------
+    const gridEl = document.getElementById("grid");
+    const cells = [], dots = [];
+    ROWS.forEach((row, r) => {
+      const label = document.createElement("div");
+      label.className = "label";
+      label.style.setProperty("--c", row.color);
+      label.innerHTML = `<i></i>${row.name}`;
+      label.onclick = () => { ensureAudio(); play(r, ctx.currentTime + 0.01); };
+      gridEl.appendChild(label);
+      cells[r] = [];
+      for (let s = 0; s < STEPS; s++) {
+        const c = document.createElement("div");
+        c.className = "cell" + (s % 4 === 0 ? " beat" : "") + (s && s % 4 === 0 ? " gap" : "");
+        c.style.setProperty("--c", row.color);
+        c.dataset.r = r; c.dataset.s = s;
+        gridEl.appendChild(c);
+        cells[r][s] = c;
+      }
+    });
+    gridEl.appendChild(document.createElement("div"));
+    for (let s = 0; s < STEPS; s++) {
+      const d = document.createElement("div");
+      d.className = "dot" + (s && s % 4 === 0 ? " gap" : "");
+      gridEl.appendChild(d); dots.push(d);
+    }
+
+    function render() {
+      grid.forEach((row, r) => row.forEach((on, s) => cells[r][s].classList.toggle("on", on)));
+    }
+
+    // Click-and-drag painting (mouse + touch)
+    let painting = false, paintVal = true;
+    function cellAt(x, y) {
+      const el = document.elementFromPoint(x, y);
+      return el && el.classList.contains("cell") ? el : null;
+    }
+    function setCell(el) {
+      const r = +el.dataset.r, s = +el.dataset.s;
+      if (grid[r][s] === paintVal) return;
+      grid[r][s] = paintVal;
+      el.classList.toggle("on", paintVal);
+      if (paintVal && !playing) { ensureAudio(); play(r, ctx.currentTime + 0.01); }
+    }
+    gridEl.addEventListener("pointerdown", e => {
+      const el = cellAt(e.clientX, e.clientY); if (!el) return;
+      painting = true;
+      paintVal = !grid[+el.dataset.r][+el.dataset.s];
+      setCell(el);
+    });
+    gridEl.addEventListener("pointermove", e => {
+      if (!painting) return;
+      const el = cellAt(e.clientX, e.clientY); if (el) setCell(el);
+    });
+    addEventListener("pointerup", () => painting = false);
+
+    // ---------- Audio engine ----------
+    let ctx, master, analyser, noiseBuf;
+    function ensureAudio() {
+      if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
+      ctx = new (window.AudioContext || window.webkitAudioContext)();
+      master = ctx.createGain(); master.gain.value = 0.8;
+      const comp = ctx.createDynamicsCompressor();
+      analyser = ctx.createAnalyser(); analyser.fftSize = 256;
+      master.connect(comp); comp.connect(analyser); analyser.connect(ctx.destination);
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+      const d = noiseBuf.getChannelData(0);
+      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+    }
+    function env(t, peak, dur) {
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(peak, t);
+      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      g.connect(master);
+      return g;
+    }
+    function tone(t, type, f1, f2, glide, peak, dur, filterFreq) {
+      const o = ctx.createOscillator(); o.type = type;
+      o.frequency.setValueAtTime(f1, t);
+      if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + glide);
+      const g = env(t, peak, dur);
+      if (filterFreq) {
+        const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(filterFreq, t);
+        f.frequency.exponentialRampToValueAtTime(Math.max(150, filterFreq / 4), t + dur);
+        o.connect(f); f.connect(g);
+      } else o.connect(g);
+      o.start(t); o.stop(t + dur + 0.05);
+    }
+    function noise(t, type, freq, peak, dur) {
+      const src = ctx.createBufferSource(); src.buffer = noiseBuf;
+      const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq;
+      src.connect(f); f.connect(env(t, peak, dur));
+      src.start(t); src.stop(t + dur + 0.05);
+    }
+
+    const ROOTS = [55, 43.65, 65.41, 49]; // A, F, C, G — chord changes every bar
+    const SCALE = [0, 3, 7, 10, 12, 7];
+    let bar = 0;
+    function play(r, t, step = 0) {
+      const root = ROOTS[bar % ROOTS.length];
+      switch (r) {
+        case 0: tone(t, "sine", 150, 42, 0.12, 1, 0.45); break;
+        case 1: noise(t, "highpass", 1200, 0.6, 0.18); tone(t, "triangle", 190, 0, 0, 0.35, 0.1); break;
+        case 2: [0, 0.012, 0.024].forEach(k => noise(t + k, "bandpass", 1400, 0.45, 0.03)); noise(t + 0.03, "bandpass", 1400, 0.5, 0.15); break;
+        case 3: noise(t, "highpass", 8000, 0.25, 0.04); break;
+        case 4: noise(t, "highpass", 7000, 0.2, 0.3); break;
+        case 5: tone(t, "sine", 220, 110, 0.2, 0.6, 0.3); break;
+        case 6: tone(t, "sawtooth", root, 0, 0, 0.45, 0.28, 900); break;
+        case 7: tone(t, "square", root * 4 * Math.pow(2, SCALE[step % SCALE.length] / 12), 0, 0, 0.12, 0.22, 3000); break;
+      }
+    }
+
+    // ---------- Sequencer (lookahead scheduling for tight timing) ----------
+    let playing = false, step = 0, nextTime = 0, timer;
+    const bpmEl = document.getElementById("bpm");
+    function scheduler() {
+      while (nextTime < ctx.currentTime + 0.1) {
+        const s = step, t = nextTime;
+        grid.forEach((row, r) => { if (row[s]) play(r, t, s); });
+        setTimeout(() => highlight(s), Math.max(0, (t - ctx.currentTime) * 1000));
+        nextTime += 60 / +bpmEl.value / 4;
+        step = (step + 1) % STEPS;
+        if (step === 0) bar++;
+      }
+    }
+    let lastStep = -1;
+    function highlight(s) {
+      if (!playing) return;
+      if (lastStep >= 0) { cells.forEach(row => row[lastStep].classList.remove("now")); dots[lastStep].classList.remove("now"); }
+      cells.forEach(row => row[s].classList.add("now")); dots[s].classList.add("now");
+      lastStep = s;
+    }
+    const playBtn = document.getElementById("play");
+    function toggle() {
+      ensureAudio();
+      playing = !playing;
+      playBtn.classList.toggle("on", playing);
+      playBtn.textContent = playing ? "■ Stop" : "▶ Play";
+      if (playing) {
+        step = 0; bar = 0; nextTime = ctx.currentTime + 0.05;
+        timer = setInterval(scheduler, 25);
+      } else {
+        clearInterval(timer);
+        if (lastStep >= 0) { cells.forEach(row => row[lastStep].classList.remove("now")); dots[lastStep].classList.remove("now"); lastStep = -1; }
+      }
+    }
+    playBtn.onclick = toggle;
+    addEventListener("keydown", e => {
+      if (e.code === "Space" && e.target.tagName !== "SELECT") { e.preventDefault(); toggle(); }
+    });
+
+    // ---------- Controls ----------
+    const bpmVal = document.getElementById("bpmVal");
+    bpmEl.oninput = () => bpmVal.textContent = bpmEl.value;
+
+    function loadRows(rows) { grid = rows.map(str => str.padEnd(STEPS, ".").split("").map(c => c === "x")); render(); }
+    document.getElementById("preset").onchange = e => {
+      const p = PRESETS[e.target.value]; if (!p) return;
+      loadRows(p.rows); bpmEl.value = p.bpm; bpmVal.textContent = p.bpm;
+      toast("Loaded " + e.target.selectedOptions[0].text);
+      e.target.value = "";
+    };
+    document.getElementById("clear").onclick = () => { grid = ROWS.map(() => Array(STEPS).fill(false)); render(); };
+    document.getElementById("random").onclick = () => {
+      const odds = [0.25, 0, 0.08, 0.6, 0.1, 0.08, 0.25, 0.25];
+      grid = ROWS.map((_, r) => Array.from({ length: STEPS }, (_, s) => Math.random() < odds[r]));
+      grid[0][0] = true;
+      grid[1][4] = grid[1][12] = Math.random() < 0.8;
+      render(); toast("🎲 Fresh beat");
+    };
+
+    // Share: encode the whole beat into the link
+    function encode() {
+      return bpmEl.value + "-" + grid.map(row => parseInt(row.map(b => b ? 1 : 0).join(""), 2).toString(16).padStart(4, "0")).join("");
+    }
+    function decode(h) {
+      const m = /^(\d+)-([0-9a-f]{32})$/.exec(h); if (!m) return false;
+      bpmEl.value = m[1]; bpmVal.textContent = m[1];
+      grid = ROWS.map((_, r) => parseInt(m[2].slice(r * 4, r * 4 + 4), 16).toString(2).padStart(16, "0").split("").map(c => c === "1"));
+      render(); return true;
+    }
+    document.getElementById("share").onclick = async () => {
+      const url = location.href.split("#")[0] + "#" + encode();
+      try { history.replaceState(null, "", url); } catch (e) {}
+      try { await navigator.clipboard.writeText(url); toast("Link copied — send it to a friend!"); }
+      catch (e) { toast("Copy the link from your address bar"); }
+    };
+
+    const toastEl = document.getElementById("toast");
+    let toastT;
+    function toast(msg) {
+      toastEl.textContent = msg; toastEl.classList.add("show");
+      clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("show"), 1800);
+    }
+
+    // ---------- Visualizer ----------
+    const viz = document.getElementById("viz"), vctx = viz.getContext("2d");
+    function drawViz() {
+      const w = viz.width = viz.clientWidth * devicePixelRatio;
+      const h = viz.height = viz.clientHeight * devicePixelRatio;
+      vctx.clearRect(0, 0, w, h);
+      const bars = 64, bw = w / bars;
+      const data = new Uint8Array(analyser ? analyser.frequencyBinCount : bars);
+      if (analyser) analyser.getByteFrequencyData(data);
+      const grad = vctx.createLinearGradient(0, 0, w, 0);
+      grad.addColorStop(0, "#8b5cf6"); grad.addColorStop(0.5, "#22d3ee"); grad.addColorStop(1, "#f472b6");
+      vctx.fillStyle = grad;
+      for (let i = 0; i < bars; i++) {
+        const v = data[Math.floor(i * data.length / bars)] / 255;
+        const bh = Math.max(3 * devicePixelRatio, v * h * 0.9);
+        vctx.globalAlpha = 0.35 + v * 0.65;
+        vctx.fillRect(i * bw + bw * 0.15, (h - bh) / 2, bw * 0.7, bh);
+      }
+      requestAnimationFrame(drawViz);
+    }
+    drawViz();
+
+    // Start with a shared beat from the link, or a preset
+    if (!decode(location.hash.slice(1))) loadRows(PRESETS.boombap.rows);
+  </script>
+</body>
+</html>

@@ -1,14 +1,390 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Modern AI/ML Exercises</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Name · AI & Analytics</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 640px; margin: 60px auto; padding: 0 16px; }
+    /* ============================================
+       EDIT THESE COLORS TO CHANGE THE WHOLE LOOK
+       ============================================ */
+    :root {
+      --bg: #07070d;
+      --surface: rgba(255, 255, 255, 0.04);
+      --border: rgba(255, 255, 255, 0.09);
+      --text: #ecebf5;
+      --muted: #8d8ba3;
+      --accent-1: #7c5cff;   /* violet */
+      --accent-2: #22d3ee;   /* cyan */
+      --accent-3: #f472b6;   /* pink */
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Space Grotesk", system-ui, sans-serif;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Animated neural-network background */
+    #net {
+      position: fixed; inset: 0;
+      width: 100%; height: 100%;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .glow {
+      position: fixed; border-radius: 50%;
+      filter: blur(120px); opacity: 0.35; z-index: 0; pointer-events: none;
+    }
+    .glow.one { width: 480px; height: 480px; background: var(--accent-1); top: -140px; left: -120px; animation: drift 18s ease-in-out infinite; }
+    .glow.two { width: 420px; height: 420px; background: var(--accent-2); bottom: -160px; right: -100px; animation: drift 22s ease-in-out infinite reverse; }
+    @keyframes drift {
+      0%, 100% { transform: translate(0, 0); }
+      50% { transform: translate(60px, 40px); }
+    }
+
+    main { position: relative; z-index: 1; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+    /* Nav */
+    nav {
+      position: sticky; top: 0; z-index: 10;
+      backdrop-filter: blur(14px);
+      background: rgba(7, 7, 13, 0.6);
+      border-bottom: 1px solid var(--border);
+    }
+    nav .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .logo { font-family: "JetBrains Mono", monospace; font-weight: 500; letter-spacing: -0.02em; }
+    .logo span { color: var(--accent-2); }
+    nav ul { display: flex; gap: 28px; list-style: none; }
+    nav a { color: var(--muted); text-decoration: none; font-size: 0.95rem; transition: color 0.2s; }
+    nav a:hover { color: var(--text); }
+
+    /* Hero */
+    .hero { min-height: 88vh; display: flex; align-items: center; }
+    .tag {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-family: "JetBrains Mono", monospace; font-size: 0.8rem;
+      color: var(--accent-2);
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      background: rgba(34, 211, 238, 0.06);
+      padding: 6px 14px; border-radius: 999px; margin-bottom: 28px;
+    }
+    .tag::before {
+      content: ""; width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent-2); box-shadow: 0 0 10px var(--accent-2);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 50% { opacity: 0.3; } }
+    h1 {
+      font-size: clamp(2.6rem, 7vw, 5.2rem);
+      line-height: 1.02; letter-spacing: -0.04em; font-weight: 700;
+    }
+    .gradient {
+      background: linear-gradient(100deg, var(--accent-1), var(--accent-2) 50%, var(--accent-3));
+      background-size: 200% auto;
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      animation: shine 6s linear infinite;
+    }
+    @keyframes shine { to { background-position: 200% center; } }
+    .typed {
+      font-family: "JetBrains Mono", monospace;
+      font-size: clamp(1rem, 2.2vw, 1.3rem);
+      color: var(--muted); margin: 26px 0 40px; min-height: 1.6em;
+    }
+    .typed .cursor { display: inline-block; width: 10px; background: var(--accent-2); animation: pulse 1s steps(1) infinite; margin-left: 2px; }
+    .btns { display: flex; gap: 14px; flex-wrap: wrap; }
+    .btn {
+      padding: 13px 26px; border-radius: 12px; font-weight: 500;
+      text-decoration: none; transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .btn.primary {
+      background: linear-gradient(100deg, var(--accent-1), var(--accent-2));
+      color: #fff; box-shadow: 0 8px 30px rgba(124, 92, 255, 0.35);
+    }
+    .btn.ghost { border: 1px solid var(--border); color: var(--text); background: var(--surface); }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(124, 92, 255, 0.45); }
+
+    /* Sections */
+    section { padding: 100px 0; }
+    .label {
+      font-family: "JetBrains Mono", monospace; font-size: 0.8rem;
+      color: var(--accent-1); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 12px;
+    }
+    h2 { font-size: clamp(1.8rem, 4vw, 2.8rem); letter-spacing: -0.03em; margin-bottom: 48px; }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .stat {
+      padding: 28px; border-radius: 18px;
+      background: var(--surface); border: 1px solid var(--border);
+    }
+    .stat .num { font-size: 2.6rem; font-weight: 700; letter-spacing: -0.03em; }
+    .stat .num em { font-style: normal; color: var(--accent-2); }
+    .stat p { color: var(--muted); font-size: 0.95rem; }
+
+    /* Project cards */
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .card {
+      position: relative; padding: 30px; border-radius: 20px;
+      background: var(--surface); border: 1px solid var(--border);
+      overflow: hidden; transition: transform 0.3s, border-color 0.3s;
+    }
+    .card::before {
+      content: ""; position: absolute; inset: 0;
+      background: radial-gradient(400px circle at var(--mx, 50%) var(--my, 50%), rgba(124, 92, 255, 0.18), transparent 60%);
+      opacity: 0; transition: opacity 0.3s;
+    }
+    .card:hover { transform: translateY(-6px); border-color: rgba(124, 92, 255, 0.5); }
+    .card:hover::before { opacity: 1; }
+    .card > * { position: relative; }
+    .icon {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: grid; place-items: center; font-size: 1.4rem; margin-bottom: 20px;
+      background: linear-gradient(135deg, rgba(124, 92, 255, 0.25), rgba(34, 211, 238, 0.2));
+      border: 1px solid var(--border);
+    }
+    .card h3 { font-size: 1.25rem; margin-bottom: 10px; letter-spacing: -0.01em; }
+    .card p { color: var(--muted); font-size: 0.97rem; margin-bottom: 20px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      font-family: "JetBrains Mono", monospace; font-size: 0.75rem;
+      padding: 4px 10px; border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06); color: var(--text);
+    }
+
+    /* Skills marquee */
+    .marquee { overflow: hidden; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
+    .track { display: flex; gap: 14px; width: max-content; animation: scroll 30s linear infinite; }
+    .track span {
+      padding: 12px 22px; border-radius: 999px; white-space: nowrap;
+      border: 1px solid var(--border); background: var(--surface);
+      font-family: "JetBrains Mono", monospace; font-size: 0.9rem;
+    }
+    @keyframes scroll { to { transform: translateX(-50%); } }
+
+    /* Contact */
+    .contact {
+      text-align: center; padding: 70px 30px; border-radius: 28px;
+      border: 1px solid var(--border);
+      background: linear-gradient(135deg, rgba(124, 92, 255, 0.14), rgba(34, 211, 238, 0.08));
+    }
+    .contact h2 { margin-bottom: 16px; }
+    .contact p { color: var(--muted); margin-bottom: 32px; }
+    .contact .btns { justify-content: center; }
+
+    footer { text-align: center; padding: 40px 0; color: var(--muted); font-size: 0.85rem; font-family: "JetBrains Mono", monospace; }
+
+    /* Scroll-in animation */
+    .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.8s ease, transform 0.8s ease; }
+    .reveal.show { opacity: 1; transform: none; }
+
+    @media (max-width: 640px) {
+      nav ul { display: none; }
+      section { padding: 70px 0; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before { animation: none !important; transition: none !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
   </style>
 </head>
 <body>
-  <h1>Modern AI/ML Exercises</h1>
-  <p>My course repo, deployed on Vercel from GitHub.</p>
+  <canvas id="net"></canvas>
+  <div class="glow one"></div>
+  <div class="glow two"></div>
+
+  <main>
+    <nav>
+      <div class="wrap">
+        <div class="logo">your<span>.</span>name</div>
+        <ul>
+          <li><a href="#about">About</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <!-- ===== HERO: change your name and tagline here ===== -->
+    <header class="hero">
+      <div class="wrap">
+        <div class="tag">Business Analytics · AI/ML</div>
+        <h1>Hi, I'm <span class="gradient">Your Name</span>.<br>I turn data into decisions.</h1>
+        <div class="typed"><span id="typed"></span><span class="cursor">&nbsp;</span></div>
+        <div class="btns">
+          <a class="btn primary" href="#projects">See my work</a>
+          <a class="btn ghost" href="#contact">Get in touch</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- ===== ABOUT / STATS ===== -->
+    <section id="about">
+      <div class="wrap">
+        <div class="label reveal">// about</div>
+        <h2 class="reveal">Learning modern AI, one model at a time.</h2>
+        <div class="stats">
+          <div class="stat reveal"><div class="num"><em data-count="12">0</em>+</div><p>Exercises completed</p></div>
+          <div class="stat reveal"><div class="num"><em data-count="5">0</em></div><p>Models trained</p></div>
+          <div class="stat reveal"><div class="num"><em data-count="100">0</em>%</div><p>Curiosity</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== PROJECTS: edit titles, text and tags ===== -->
+    <section id="projects">
+      <div class="wrap">
+        <div class="label reveal">// projects</div>
+        <h2 class="reveal">Things I've built</h2>
+        <div class="grid">
+          <div class="card reveal">
+            <div class="icon">📈</div>
+            <h3>Sales Forecasting</h3>
+            <p>Predicting next-quarter revenue with time-series models and clear visual dashboards.</p>
+            <div class="chips"><span class="chip">Python</span><span class="chip">pandas</span><span class="chip">Prophet</span></div>
+          </div>
+          <div class="card reveal">
+            <div class="icon">🧠</div>
+            <h3>Customer Churn Model</h3>
+            <p>A classifier that flags at-risk customers so teams can act before they leave.</p>
+            <div class="chips"><span class="chip">scikit-learn</span><span class="chip">XGBoost</span></div>
+          </div>
+          <div class="card reveal">
+            <div class="icon">💬</div>
+            <h3>Review Sentiment</h3>
+            <p>Using language models to sort thousands of product reviews into themes and moods.</p>
+            <div class="chips"><span class="chip">LLMs</span><span class="chip">NLP</span><span class="chip">Python</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SKILLS ===== -->
+    <section style="padding-top: 0;">
+      <div class="marquee">
+        <div class="track">
+          <span>Python</span><span>SQL</span><span>pandas</span><span>scikit-learn</span><span>PyTorch</span><span>Tableau</span><span>Machine Learning</span><span>Data Viz</span><span>LLMs</span><span>Statistics</span>
+          <span>Python</span><span>SQL</span><span>pandas</span><span>scikit-learn</span><span>PyTorch</span><span>Tableau</span><span>Machine Learning</span><span>Data Viz</span><span>LLMs</span><span>Statistics</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== CONTACT: put your real links here ===== -->
+    <section id="contact">
+      <div class="wrap">
+        <div class="contact reveal">
+          <h2>Let's build something.</h2>
+          <p>Open to projects, internships and good conversations about data.</p>
+          <div class="btns">
+            <a class="btn primary" href="mailto:you@example.com">Email me</a>
+            <a class="btn ghost" href="https://github.com/" target="_blank">GitHub</a>
+            <a class="btn ghost" href="https://linkedin.com/" target="_blank">LinkedIn</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer>Built with HTML · Deployed on Vercel</footer>
+  </main>
+
+  <script>
+    // Typing effect — edit these phrases
+    const phrases = [
+      "> training models...",
+      "> cleaning messy data...",
+      "> building dashboards...",
+      "> deploying to the web 🚀"
+    ];
+    const el = document.getElementById("typed");
+    let p = 0, i = 0, deleting = false;
+    function type() {
+      const word = phrases[p];
+      el.textContent = word.slice(0, i);
+      if (!deleting && i < word.length) i++;
+      else if (deleting && i > 0) i--;
+      else if (!deleting) { deleting = true; return setTimeout(type, 1400); }
+      else { deleting = false; p = (p + 1) % phrases.length; }
+      setTimeout(type, deleting ? 35 : 70);
+    }
+    type();
+
+    // Reveal on scroll + count-up numbers
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (!e.isIntersecting) return;
+        e.target.classList.add("show");
+        e.target.querySelectorAll("[data-count]").forEach(n => {
+          const end = +n.dataset.count, start = performance.now();
+          (function tick(t) {
+            const k = Math.min((t - start) / 1200, 1);
+            n.textContent = Math.round(end * (1 - Math.pow(1 - k, 3)));
+            if (k < 1) requestAnimationFrame(tick);
+          })(start);
+        });
+        io.unobserve(e.target);
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll(".reveal").forEach(r => io.observe(r));
+
+    // Spotlight that follows the mouse on cards
+    document.querySelectorAll(".card").forEach(c => {
+      c.addEventListener("mousemove", e => {
+        const r = c.getBoundingClientRect();
+        c.style.setProperty("--mx", (e.clientX - r.left) + "px");
+        c.style.setProperty("--my", (e.clientY - r.top) + "px");
+      });
+    });
+
+    // Neural-network background
+    const cv = document.getElementById("net"), ctx = cv.getContext("2d");
+    let W, H, nodes = [];
+    const mouse = { x: -999, y: -999 };
+    function resize() {
+      W = cv.width = innerWidth; H = cv.height = innerHeight;
+      const count = Math.min(90, Math.floor(W * H / 16000));
+      nodes = Array.from({ length: count }, () => ({
+        x: Math.random() * W, y: Math.random() * H,
+        vx: (Math.random() - 0.5) * 0.4, vy: (Math.random() - 0.5) * 0.4
+      }));
+    }
+    addEventListener("resize", resize);
+    addEventListener("mousemove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+    resize();
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      for (const n of nodes) {
+        n.x += n.vx; n.y += n.vy;
+        if (n.x < 0 || n.x > W) n.vx *= -1;
+        if (n.y < 0 || n.y > H) n.vy *= -1;
+      }
+      for (let a = 0; a < nodes.length; a++) {
+        for (let b = a + 1; b < nodes.length; b++) {
+          const dx = nodes[a].x - nodes[b].x, dy = nodes[a].y - nodes[b].y;
+          const d = Math.hypot(dx, dy);
+          if (d < 140) {
+            ctx.strokeStyle = `rgba(124, 92, 255, ${0.18 * (1 - d / 140)})`;
+            ctx.beginPath(); ctx.moveTo(nodes[a].x, nodes[a].y); ctx.lineTo(nodes[b].x, nodes[b].y); ctx.stroke();
+          }
+        }
+        const md = Math.hypot(nodes[a].x - mouse.x, nodes[a].y - mouse.y);
+        if (md < 180) {
+          ctx.strokeStyle = `rgba(34, 211, 238, ${0.4 * (1 - md / 180)})`;
+          ctx.beginPath(); ctx.moveTo(nodes[a].x, nodes[a].y); ctx.lineTo(mouse.x, mouse.y); ctx.stroke();
+        }
+        ctx.fillStyle = "rgba(200, 200, 255, 0.6)";
+        ctx.beginPath(); ctx.arc(nodes[a].x, nodes[a].y, 1.6, 0, Math.PI * 2); ctx.fill();
+      }
+      requestAnimationFrame(draw);
+    }
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) draw();
+  </script>
 </body>
 </html>

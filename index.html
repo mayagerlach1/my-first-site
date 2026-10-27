@@ -3,385 +3,441 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BeatLab</title>
+  <title>Mexico GP Predictor</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Titillium+Web:wght@400;600;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #08080f;
-      --panel: #11111c;
-      --cell: #1b1b2a;
+      --bg: #0b0b10;
+      --panel: #14141c;
+      --panel2: #1c1c27;
       --border: rgba(255,255,255,0.08);
-      --text: #eeedf7;
-      --muted: #8a88a3;
-      --accent: #8b5cf6;
-      --accent2: #22d3ee;
+      --text: #f2f2f7;
+      --muted: #8e8ea3;
+      --red: #e10600;
+      --green: #00a86b;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      background: radial-gradient(1200px 600px at 20% -10%, rgba(139,92,246,0.18), transparent 60%),
-                  radial-gradient(900px 500px at 110% 110%, rgba(34,211,238,0.12), transparent 60%),
-                  var(--bg);
-      color: var(--text);
-      font-family: "Space Grotesk", system-ui, sans-serif;
-      min-height: 100vh;
-      -webkit-user-select: none; user-select: none;
+      background: var(--bg); color: var(--text);
+      font-family: "Titillium Web", system-ui, sans-serif;
+      line-height: 1.5; min-height: 100vh;
     }
-    .wrap { max-width: 1000px; margin: 0 auto; padding: 32px 16px 48px; }
+    .mono { font-family: "JetBrains Mono", monospace; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
 
-    header { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin-bottom: 20px; }
-    h1 { font-size: clamp(2.2rem, 6vw, 3.4rem); letter-spacing: -0.05em; line-height: 1; }
-    h1 span {
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      -webkit-background-clip: text; background-clip: text; color: transparent;
+    /* Hero */
+    .hero {
+      position: relative; overflow: hidden;
+      background:
+        linear-gradient(115deg, rgba(0,104,71,0.35) 0%, transparent 35%, transparent 65%, rgba(206,17,38,0.35) 100%),
+        radial-gradient(800px 300px at 50% 0%, rgba(225,6,0,0.25), transparent 70%),
+        var(--bg);
+      border-bottom: 1px solid var(--border);
+      padding: 40px 0 32px;
     }
-    .sub { color: var(--muted); margin-top: 6px; }
-    .hint { font-family: "JetBrains Mono", monospace; font-size: 0.78rem; color: var(--muted); }
-    kbd { border: 1px solid var(--border); border-radius: 5px; padding: 1px 6px; background: var(--panel); }
+    .hero::after {
+      content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 6px;
+      background: repeating-linear-gradient(90deg, #fff 0 18px, #111 18px 36px);
+      opacity: 0.6;
+    }
+    .eyebrow { display: inline-flex; gap: 8px; align-items: center; font-size: 0.8rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+    .eyebrow b { color: var(--red); }
+    h1 { font-size: clamp(2.2rem, 7vw, 4.4rem); font-weight: 900; line-height: 0.95; letter-spacing: -0.02em; margin: 10px 0 12px; text-transform: uppercase; font-style: italic; }
+    h1 span { color: var(--red); }
+    .meta { color: var(--muted); font-size: 1rem; }
+    .countdown { display: flex; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+    .cd { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; min-width: 76px; text-align: center; }
+    .cd b { display: block; font-size: 1.8rem; font-weight: 700; line-height: 1; font-family: "JetBrains Mono", monospace; }
+    .cd small { color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em; }
 
-    canvas#viz {
-      width: 100%; height: 90px; display: block;
-      background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
-      margin-bottom: 16px;
-    }
+    section { padding: 28px 0; }
+    h2 { font-size: 1.35rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+    h2::before { content: ""; width: 4px; height: 20px; background: var(--red); border-radius: 2px; }
+    .sub { color: var(--muted); margin-bottom: 18px; font-size: 0.95rem; }
 
-    .controls {
-      display: flex; flex-wrap: wrap; gap: 10px; align-items: center;
-      background: var(--panel); border: 1px solid var(--border); border-radius: 16px;
-      padding: 12px; margin-bottom: 16px;
-    }
-    button, select {
-      font: inherit; font-size: 0.92rem; color: var(--text);
-      background: var(--cell); border: 1px solid var(--border);
-      padding: 9px 14px; border-radius: 10px; cursor: pointer;
-      transition: transform 0.1s, background 0.2s, border-color 0.2s;
-    }
-    button:hover, select:hover { border-color: rgba(255,255,255,0.25); }
-    button:active { transform: scale(0.96); }
-    #play {
-      background: linear-gradient(90deg, var(--accent), var(--accent2));
-      border: none; font-weight: 700; min-width: 108px; color: #fff;
-      box-shadow: 0 6px 24px rgba(139,92,246,0.4);
-    }
-    #play.on { background: #ef4444; box-shadow: 0 6px 24px rgba(239,68,68,0.4); }
-    .tempo { display: flex; align-items: center; gap: 10px; font-family: "JetBrains Mono", monospace; font-size: 0.85rem; }
-    .tempo b { min-width: 34px; display: inline-block; color: var(--accent2); }
-    input[type=range] { accent-color: var(--accent); width: 120px; }
-    .spacer { flex: 1; }
+    .layout { display: grid; grid-template-columns: 320px 1fr; gap: 20px; }
+    @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 20px; }
 
-    .board {
-      background: var(--panel); border: 1px solid var(--border); border-radius: 18px;
-      padding: 14px; overflow-x: auto;
+    /* Controls */
+    .ctrl { margin-bottom: 18px; }
+    .ctrl label { display: flex; justify-content: space-between; font-weight: 600; font-size: 0.95rem; }
+    .ctrl label span { color: var(--red); font-family: "JetBrains Mono", monospace; font-size: 0.85rem; }
+    .ctrl p { color: var(--muted); font-size: 0.8rem; margin-bottom: 6px; }
+    input[type=range] { width: 100%; accent-color: var(--red); }
+    select {
+      width: 100%; font: inherit; color: var(--text); background: var(--panel2);
+      border: 1px solid var(--border); border-radius: 10px; padding: 9px 10px;
     }
-    .grid { display: grid; grid-template-columns: 96px repeat(16, minmax(30px, 1fr)); gap: 6px; min-width: 640px; }
-    .label {
-      display: flex; align-items: center; gap: 8px;
-      font-size: 0.85rem; font-weight: 500; cursor: pointer; padding-right: 4px;
-      border-radius: 8px;
+    .btn {
+      width: 100%; font: inherit; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+      border: none; border-radius: 12px; padding: 13px; cursor: pointer; color: #fff;
+      background: var(--red); box-shadow: 0 8px 26px rgba(225,6,0,0.35);
+      transition: transform 0.1s, filter 0.2s;
     }
-    .label i { width: 10px; height: 10px; border-radius: 3px; background: var(--c); box-shadow: 0 0 10px var(--c); flex: none; }
-    .label:hover { color: #fff; }
-    .cell {
-      aspect-ratio: 1; border-radius: 8px; background: var(--cell);
-      border: 1px solid transparent; cursor: pointer; touch-action: none;
-      transition: background 0.08s, transform 0.08s, box-shadow 0.15s;
-    }
-    .cell.beat { background: #232336; }
-    .cell.gap { margin-left: 6px; }
-    .cell:hover { border-color: rgba(255,255,255,0.2); }
-    .cell.on { background: var(--c); box-shadow: 0 0 14px -2px var(--c); }
-    .cell.now { border-color: rgba(255,255,255,0.55); }
-    .cell.on.now { transform: scale(1.12); box-shadow: 0 0 24px 2px var(--c); }
-    .steps { display: contents; }
-    .dot { height: 6px; border-radius: 3px; background: var(--cell); margin-top: 4px; }
-    .dot.gap { margin-left: 6px; }
-    .dot.now { background: var(--accent2); box-shadow: 0 0 10px var(--accent2); }
+    .btn:hover { filter: brightness(1.12); }
+    .btn:active { transform: scale(0.98); }
+    .btn.ghost { background: var(--panel2); box-shadow: none; border: 1px solid var(--border); margin-top: 10px; }
 
-    .toast {
-      position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 30px);
-      background: #fff; color: #111; padding: 10px 18px; border-radius: 999px;
-      font-weight: 500; opacity: 0; transition: 0.25s; pointer-events: none;
+    /* Podium */
+    .podium { display: grid; grid-template-columns: 1fr 1.15fr 1fr; gap: 10px; align-items: end; margin-bottom: 22px; }
+    .step {
+      border-radius: 14px; padding: 14px 10px; text-align: center;
+      background: linear-gradient(180deg, var(--panel2), var(--panel));
+      border: 1px solid var(--border); border-top: 4px solid var(--tc);
+      position: relative;
     }
-    .toast.show { opacity: 1; transform: translate(-50%, 0); }
-    footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 28px; font-family: "JetBrains Mono", monospace; }
+    .step.p1 { padding-top: 26px; padding-bottom: 26px; box-shadow: 0 0 40px -12px var(--tc); }
+    .step .pos { font-weight: 900; font-size: 2rem; font-style: italic; line-height: 1; color: var(--muted); }
+    .step.p1 .pos { color: #ffd54a; font-size: 2.6rem; }
+    .step .name { font-weight: 700; font-size: 1.1rem; margin-top: 4px; }
+    .step .team { color: var(--muted); font-size: 0.8rem; }
+    .step .pct { font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 1.3rem; margin-top: 6px; color: var(--tc); }
+
+    /* Bars */
+    .bars { display: flex; flex-direction: column; gap: 7px; }
+    .bar { display: grid; grid-template-columns: 26px 120px 1fr 64px; gap: 10px; align-items: center; font-size: 0.92rem; }
+    .bar .n { color: var(--muted); font-family: "JetBrains Mono", monospace; font-size: 0.8rem; text-align: right; }
+    .bar .who { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .track { height: 22px; background: var(--panel2); border-radius: 6px; overflow: hidden; }
+    .fill { height: 100%; border-radius: 6px; background: var(--tc); transition: width 0.6s cubic-bezier(.2,.8,.2,1); position: relative; }
+    .fill::after { content: ""; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18)); }
+    .bar .v { font-family: "JetBrains Mono", monospace; font-size: 0.85rem; text-align: right; }
+    .bar .v small { display: block; color: var(--muted); font-size: 0.68rem; }
+    @media (max-width: 520px) { .bar { grid-template-columns: 22px 92px 1fr 56px; } }
+
+    /* Title meter */
+    .title-meter { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: center; }
+    .ring { width: 110px; height: 110px; }
+    .ring circle { fill: none; stroke-width: 10; }
+    .ring .bg { stroke: var(--panel2); }
+    .ring .fg { stroke: #27F4D2; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dashoffset 0.8s; }
+    .ring text { fill: var(--text); font-family: "JetBrains Mono", monospace; font-weight: 600; font-size: 20px; text-anchor: middle; dominant-baseline: middle; }
+    .title-meter p { color: var(--muted); font-size: 0.92rem; }
+    .title-meter strong { color: var(--text); }
+
+    /* Race sim */
+    .lights { display: flex; gap: 10px; justify-content: center; margin: 8px 0 18px; }
+    .light { width: 34px; height: 34px; border-radius: 50%; background: #2a0c0c; border: 3px solid #222; transition: background 0.1s, box-shadow 0.1s; }
+    .light.on { background: var(--red); box-shadow: 0 0 22px var(--red); }
+    .result { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+    .row {
+      display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+      background: var(--panel2); border-radius: 10px; border-left: 4px solid var(--tc);
+      opacity: 0; transform: translateX(-12px); transition: 0.35s;
+    }
+    .row.show { opacity: 1; transform: none; }
+    .row b { font-family: "JetBrains Mono", monospace; width: 26px; color: var(--muted); }
+    .row.dnf b { color: var(--red); font-size: 0.7rem; }
+    .row span { flex: 1; font-weight: 600; }
+    .row small { color: var(--muted); }
+    .headline { text-align: center; font-size: 1.2rem; font-weight: 700; min-height: 1.8em; margin-bottom: 14px; }
+
+    /* Table */
+    details summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 0.88rem; }
+    th, td { padding: 7px 8px; text-align: left; border-bottom: 1px solid var(--border); }
+    th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.06em; }
+    td.num { font-family: "JetBrains Mono", monospace; }
+    .tablewrap { overflow-x: auto; }
+    .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--tc); margin-right: 6px; }
+
+    footer { color: var(--muted); font-size: 0.8rem; text-align: center; padding: 30px 16px 40px; border-top: 1px solid var(--border); margin-top: 20px; }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <div>
-        <h1>Beat<span>Lab</span></h1>
-        <p class="sub">Click the squares to make a beat. Press play.</p>
-      </div>
-      <div class="hint"><kbd>Space</kbd> play / stop &nbsp;·&nbsp; click a name to hear it</div>
-    </header>
 
-    <canvas id="viz"></canvas>
-
-    <div class="controls">
-      <button id="play">▶ Play</button>
-      <div class="tempo">BPM <input id="bpm" type="range" min="60" max="180" value="100"><b id="bpmVal">100</b></div>
-      <select id="preset">
-        <option value="">Presets…</option>
-        <option value="boombap">Boom Bap</option>
-        <option value="house">House</option>
-        <option value="trap">Trap</option>
-        <option value="reggaeton">Reggaeton</option>
-      </select>
-      <div class="spacer"></div>
-      <button id="random">🎲 Randomize</button>
-      <button id="clear">Clear</button>
-      <button id="share">🔗 Share</button>
+  <header class="hero">
+    <div class="wrap">
+      <div class="eyebrow"><b>●</b> Round 19 · Formula 1 2026</div>
+      <h1>Who wins <span>Mexico</span>?</h1>
+      <p class="meta">Mexico City Grand Prix · Autódromo Hermanos Rodríguez · 71 laps · Sun 1 Nov 2026, 2:00 PM local</p>
+      <div class="countdown" id="countdown"></div>
     </div>
+  </header>
 
-    <div class="board"><div class="grid" id="grid"></div></div>
+  <main class="wrap">
+    <section>
+      <h2>The Prediction</h2>
+      <p class="sub">20,000 simulated races, based on 2026 season form, the last race in Austin, and Mexico track history. Move the sliders to change the model.</p>
 
-    <footer>Every sound is generated live in your browser · no files, no server</footer>
-  </div>
-  <div class="toast" id="toast"></div>
+      <div class="layout">
+        <aside class="card">
+          <div class="ctrl">
+            <label>Season form <span id="wFormV"></span></label>
+            <p>Points scored across the first 18 races</p>
+            <input type="range" id="wForm" min="0" max="100" value="60">
+          </div>
+          <div class="ctrl">
+            <label>Momentum <span id="wRecentV"></span></label>
+            <p>Finishing position at the US GP in Austin</p>
+            <input type="range" id="wRecent" min="0" max="100" value="25">
+          </div>
+          <div class="ctrl">
+            <label>Mexico history <span id="wTrackV"></span></label>
+            <p>Past wins at this high-altitude track</p>
+            <input type="range" id="wTrack" min="0" max="100" value="10">
+          </div>
+          <div class="ctrl">
+            <label>Chaos <span id="chaosV"></span></label>
+            <p>Crashes, strategy, safety cars — higher = more upsets</p>
+            <input type="range" id="chaos" min="5" max="100" value="35">
+          </div>
+          <div class="ctrl">
+            <label>Pole position</label>
+            <p>Set this after qualifying on Saturday</p>
+            <select id="pole"><option value="">Not decided yet</option></select>
+          </div>
+          <button class="btn ghost" id="reset">Reset model</button>
+        </aside>
+
+        <div>
+          <div class="podium" id="podium"></div>
+          <div class="card">
+            <div class="bars" id="bars"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Title Watch</h2>
+      <p class="sub">Antonelli leads by 123 points. He's champion on Sunday if he finishes 9th or better, or if neither Russell nor Hamilton wins.</p>
+      <div class="card title-meter">
+        <svg class="ring" viewBox="0 0 110 110">
+          <circle class="bg" cx="55" cy="55" r="46"></circle>
+          <circle class="fg" id="ringFg" cx="55" cy="55" r="46" stroke-dasharray="289" stroke-dashoffset="289"></circle>
+          <text x="55" y="57" id="ringTxt">–</text>
+        </svg>
+        <p>Chance <strong>Kimi Antonelli</strong> clinches the 2026 World Championship in Mexico, according to the simulation. At 20, he'd be the youngest champion in F1 history.</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>Race It Yourself</h2>
+      <p class="sub">Simulate one Mexico City Grand Prix using the current model. Every run is different.</p>
+      <div class="card">
+        <div class="lights" id="lights">
+          <div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div>
+        </div>
+        <div class="headline" id="headline">Press the button to start the race</div>
+        <button class="btn" id="raceBtn" style="max-width: 320px; display: block; margin: 0 auto 18px;">🏁 Lights out</button>
+        <div class="result" id="result"></div>
+      </div>
+    </section>
+
+    <section>
+      <details class="card">
+        <summary>See the data behind the model</summary>
+        <div class="tablewrap">
+          <table>
+            <thead><tr><th>Driver</th><th>Team</th><th>Pts</th><th>Austin</th><th>Mexico wins</th><th>Score</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <footer>
+    Standings and results as of 27 Oct 2026, after the United States GP (round 18 of 23).<br>
+    A fan-made model for fun — not affiliated with Formula 1, and not betting advice.
+  </footer>
 
   <script>
-    // ---------- Instruments ----------
-    const ROWS = [
-      { name: "Kick",     color: "#ff4d6d" },
-      { name: "Snare",    color: "#ff9f43" },
-      { name: "Clap",     color: "#feca57" },
-      { name: "Hi-hat",   color: "#1dd1a1" },
-      { name: "Open hat", color: "#22d3ee" },
-      { name: "Tom",      color: "#54a0ff" },
-      { name: "Bass",     color: "#8b5cf6" },
-      { name: "Pluck",    color: "#f472b6" }
-    ];
-    const STEPS = 16;
-    let grid = ROWS.map(() => Array(STEPS).fill(false));
+    // ================= DATA (update after each race) =================
+    const TEAMS = {
+      "Mercedes":     "#27F4D2",
+      "Ferrari":      "#E8002D",
+      "Red Bull":     "#3671C6",
+      "McLaren":      "#FF8000",
+      "Racing Bulls": "#6692FF",
+      "Alpine":       "#FF87BC",
+      "Haas":         "#B6BABD",
+      "Audi":         "#F50537",
+      "Aston Martin": "#229971",
+      "Williams":     "#64C4FF",
+      "Cadillac":     "#D4AF37"
+    };
+    // name, team, season points, Austin finish (20 = did not finish), Mexico City GP wins
+    const DRIVERS = [
+      ["Kimi Antonelli",    "Mercedes",     365,  1, 0],
+      ["George Russell",    "Mercedes",     242,  8, 0],
+      ["Lewis Hamilton",    "Ferrari",      241,  4, 2],
+      ["Max Verstappen",    "Red Bull",     236,  3, 5],
+      ["Charles Leclerc",   "Ferrari",      233,  2, 0],
+      ["Lando Norris",      "McLaren",      211,  5, 1],
+      ["Oscar Piastri",     "McLaren",      144,  7, 0],
+      ["Isack Hadjar",      "Red Bull",     105,  6, 0],
+      ["Liam Lawson",       "Racing Bulls",  77,  9, 0],
+      ["Pierre Gasly",      "Alpine",        42, 10, 0],
+      ["Arvid Lindblad",    "Racing Bulls",  38, 12, 0],
+      ["Franco Colapinto",  "Alpine",        27, 20, 0],
+      ["Oliver Bearman",    "Haas",          23, 20, 0],
+      ["Nico Hülkenberg",   "Audi",          13, 11, 0],
+      ["Gabriel Bortoleto", "Audi",          10, 13, 0],
+      ["Esteban Ocon",      "Haas",           7, 14, 0],
+      ["Fernando Alonso",   "Aston Martin",   7, 16, 0],
+      ["Carlos Sainz",      "Williams",       7, 18, 1],
+      ["Alex Albon",        "Williams",       5, 17, 0],
+      ["Lance Stroll",      "Aston Martin",   0, 15, 0],
+      ["Valtteri Bottas",   "Cadillac",       0, 20, 0],
+      ["Sergio Pérez",      "Cadillac",       0, 19, 0]
+    ].map(([name, team, pts, austin, mexWins]) => ({ name, team, pts, austin, mexWins, color: TEAMS[team] }));
 
-    const PRESETS = {
-      boombap:   { bpm: 90,  rows: ["x.......x.x.....", "....x.......x...", "................", "x.x.x.x.x.x.x.x.", "..............x.", "................", "x.....x...x.....", "...x......x...x."] },
-      house:     { bpm: 124, rows: ["x...x...x...x...", "................", "....x.......x...", "..x...x...x...x.", "..x.......x.....", "................", "..x...x...x...x.", "x..x..x...x..x.."] },
-      trap:      { bpm: 140, rows: ["x......x..x.....", "........x.......", "........x.......", "xxxxxxx.xxx.xxxx", "................", ".............xx.", "x......x..x.....", "................"] },
-      reggaeton: { bpm: 96,  rows: ["x...x...x...x...", "...x..x....x..x.", "................", "x.x.x.x.x.x.x.x.", "................", "................", "x..x..x.x..x..x.", "......x.......x."] }
+    const RACE_START = Date.UTC(2026, 10, 1, 20, 0); // 2:00 PM Mexico City = 20:00 UTC
+    const SIMS = 20000, DNF_RATE = 0.06;
+    const DEFAULTS = { wForm: 60, wRecent: 25, wTrack: 10, chaos: 35 };
+
+    // ================= MODEL =================
+    const $ = id => document.getElementById(id);
+    const maxPts = Math.max(...DRIVERS.map(d => d.pts));
+    const maxMex = Math.max(...DRIVERS.map(d => d.mexWins));
+
+    function scores() {
+      const wF = +$("wForm").value / 100, wR = +$("wRecent").value / 100, wT = +$("wTrack").value / 100;
+      const total = wF + wR + wT || 1;
+      const pole = $("pole").value;
+      return DRIVERS.map(d => {
+        const form = Math.sqrt(d.pts / maxPts);           // sqrt keeps the midfield from vanishing
+        const recent = (21 - d.austin) / 20;
+        const track = d.mexWins / maxMex;
+        let s = (wF * form + wR * recent + wT * track) / total;
+        if (pole === d.name) s += 0.12;
+        return s;
+      });
+    }
+    // Gumbel noise: the standard trick for "random but strength-weighted" race orders
+    const gumbel = () => -Math.log(-Math.log(Math.random() + 1e-12) + 1e-12);
+
+    function raceOnce(sc, chaos) {
+      return DRIVERS.map((d, i) => ({
+        i, dnf: Math.random() < DNF_RATE,
+        perf: sc[i] / chaos + gumbel()
+      })).sort((a, b) => (a.dnf - b.dnf) || (b.perf - a.perf));
+    }
+
+    function simulate() {
+      const sc = scores();
+      const chaos = 0.02 + (+$("chaos").value / 100) * 0.18;
+      const wins = Array(DRIVERS.length).fill(0), pods = Array(DRIVERS.length).fill(0);
+      const ANT = 0, RUS = 1, HAM = 2;
+      let clinch = 0;
+      for (let s = 0; s < SIMS; s++) {
+        const order = raceOnce(sc, chaos);
+        wins[order[0].i]++;
+        for (let k = 0; k < 3; k++) pods[order[k].i]++;
+        const antPos = order.findIndex(o => o.i === ANT);
+        const antFinished = !order[antPos].dnf;
+        const winner = order[0].i;
+        if ((antFinished && antPos < 9) || (winner !== RUS && winner !== HAM)) clinch++;
+      }
+      return { sc, chaos, win: wins.map(w => w / SIMS), pod: pods.map(p => p / SIMS), clinch: clinch / SIMS };
+    }
+
+    // ================= RENDER =================
+    const pct = x => x >= 0.995 ? ">99%" : x < 0.001 ? "<0.1%" : (x * 100).toFixed(x < 0.1 ? 1 : 0) + "%";
+
+    function update() {
+      ["wForm", "wRecent", "wTrack", "chaos"].forEach(id => $(id + "V").textContent = $(id).value);
+      const r = simulate();
+      const ranked = DRIVERS.map((d, i) => ({ ...d, win: r.win[i], pod: r.pod[i], score: r.sc[i] }))
+                            .sort((a, b) => b.win - a.win);
+
+      // Podium (2nd, 1st, 3rd)
+      $("podium").innerHTML = [1, 0, 2].map(k => {
+        const d = ranked[k];
+        return `<div class="step ${k === 0 ? "p1" : ""}" style="--tc:${d.color}">
+          <div class="pos">${k + 1}</div>
+          <div class="name">${d.name.split(" ").slice(-1)[0]}</div>
+          <div class="team">${d.team}</div>
+          <div class="pct">${pct(d.win)}</div>
+        </div>`;
+      }).join("");
+
+      // Bars: top 10
+      const top = ranked[0].win;
+      $("bars").innerHTML = ranked.slice(0, 10).map((d, k) => `
+        <div class="bar" style="--tc:${d.color}">
+          <div class="n">${k + 1}</div>
+          <div class="who">${d.name}</div>
+          <div class="track"><div class="fill" style="width:${(d.win / top) * 100}%"></div></div>
+          <div class="v">${pct(d.win)}<small>podium ${pct(d.pod)}</small></div>
+        </div>`).join("");
+
+      // Title ring
+      $("ringFg").style.strokeDashoffset = 289 * (1 - r.clinch);
+      $("ringTxt").textContent = pct(r.clinch);
+
+      // Data table
+      $("tbody").innerHTML = DRIVERS.map((d, i) => `
+        <tr style="--tc:${d.color}">
+          <td><span class="dot"></span>${d.name}</td><td>${d.team}</td>
+          <td class="num">${d.pts}</td><td class="num">${d.austin === 20 ? "DNF" : "P" + d.austin}</td>
+          <td class="num">${d.mexWins}</td><td class="num">${r.sc[i].toFixed(3)}</td>
+        </tr>`).join("");
+      lastModel = r;
+    }
+
+    // Debounce slider updates so 20k sims don't lag while dragging
+    let t, lastModel;
+    ["wForm", "wRecent", "wTrack", "chaos", "pole"].forEach(id =>
+      $(id).addEventListener("input", () => { clearTimeout(t); t = setTimeout(update, 60); }));
+    $("pole").innerHTML += DRIVERS.map(d => `<option>${d.name}</option>`).join("");
+    $("reset").onclick = () => {
+      Object.entries(DEFAULTS).forEach(([k, v]) => $(k).value = v);
+      $("pole").value = ""; update();
     };
 
-    // ---------- Build the grid ----------
-    const gridEl = document.getElementById("grid");
-    const cells = [], dots = [];
-    ROWS.forEach((row, r) => {
-      const label = document.createElement("div");
-      label.className = "label";
-      label.style.setProperty("--c", row.color);
-      label.innerHTML = `<i></i>${row.name}`;
-      label.onclick = () => { ensureAudio(); play(r, ctx.currentTime + 0.01); };
-      gridEl.appendChild(label);
-      cells[r] = [];
-      for (let s = 0; s < STEPS; s++) {
-        const c = document.createElement("div");
-        c.className = "cell" + (s % 4 === 0 ? " beat" : "") + (s && s % 4 === 0 ? " gap" : "");
-        c.style.setProperty("--c", row.color);
-        c.dataset.r = r; c.dataset.s = s;
-        gridEl.appendChild(c);
-        cells[r][s] = c;
-      }
-    });
-    gridEl.appendChild(document.createElement("div"));
-    for (let s = 0; s < STEPS; s++) {
-      const d = document.createElement("div");
-      d.className = "dot" + (s && s % 4 === 0 ? " gap" : "");
-      gridEl.appendChild(d); dots.push(d);
-    }
-
-    function render() {
-      grid.forEach((row, r) => row.forEach((on, s) => cells[r][s].classList.toggle("on", on)));
-    }
-
-    // Click-and-drag painting (mouse + touch)
-    let painting = false, paintVal = true;
-    function cellAt(x, y) {
-      const el = document.elementFromPoint(x, y);
-      return el && el.classList.contains("cell") ? el : null;
-    }
-    function setCell(el) {
-      const r = +el.dataset.r, s = +el.dataset.s;
-      if (grid[r][s] === paintVal) return;
-      grid[r][s] = paintVal;
-      el.classList.toggle("on", paintVal);
-      if (paintVal && !playing) { ensureAudio(); play(r, ctx.currentTime + 0.01); }
-    }
-    gridEl.addEventListener("pointerdown", e => {
-      const el = cellAt(e.clientX, e.clientY); if (!el) return;
-      painting = true;
-      paintVal = !grid[+el.dataset.r][+el.dataset.s];
-      setCell(el);
-    });
-    gridEl.addEventListener("pointermove", e => {
-      if (!painting) return;
-      const el = cellAt(e.clientX, e.clientY); if (el) setCell(el);
-    });
-    addEventListener("pointerup", () => painting = false);
-
-    // ---------- Audio engine ----------
-    let ctx, master, analyser, noiseBuf;
-    function ensureAudio() {
-      if (ctx) { if (ctx.state === "suspended") ctx.resume(); return; }
-      ctx = new (window.AudioContext || window.webkitAudioContext)();
-      master = ctx.createGain(); master.gain.value = 0.8;
-      const comp = ctx.createDynamicsCompressor();
-      analyser = ctx.createAnalyser(); analyser.fftSize = 256;
-      master.connect(comp); comp.connect(analyser); analyser.connect(ctx.destination);
-      noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-      const d = noiseBuf.getChannelData(0);
-      for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    }
-    function env(t, peak, dur) {
-      const g = ctx.createGain();
-      g.gain.setValueAtTime(peak, t);
-      g.gain.exponentialRampToValueAtTime(0.001, t + dur);
-      g.connect(master);
-      return g;
-    }
-    function tone(t, type, f1, f2, glide, peak, dur, filterFreq) {
-      const o = ctx.createOscillator(); o.type = type;
-      o.frequency.setValueAtTime(f1, t);
-      if (f2) o.frequency.exponentialRampToValueAtTime(f2, t + glide);
-      const g = env(t, peak, dur);
-      if (filterFreq) {
-        const f = ctx.createBiquadFilter(); f.type = "lowpass"; f.frequency.setValueAtTime(filterFreq, t);
-        f.frequency.exponentialRampToValueAtTime(Math.max(150, filterFreq / 4), t + dur);
-        o.connect(f); f.connect(g);
-      } else o.connect(g);
-      o.start(t); o.stop(t + dur + 0.05);
-    }
-    function noise(t, type, freq, peak, dur) {
-      const src = ctx.createBufferSource(); src.buffer = noiseBuf;
-      const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq;
-      src.connect(f); f.connect(env(t, peak, dur));
-      src.start(t); src.stop(t + dur + 0.05);
-    }
-
-    const ROOTS = [55, 43.65, 65.41, 49]; // A, F, C, G — chord changes every bar
-    const SCALE = [0, 3, 7, 10, 12, 7];
-    let bar = 0;
-    function play(r, t, step = 0) {
-      const root = ROOTS[bar % ROOTS.length];
-      switch (r) {
-        case 0: tone(t, "sine", 150, 42, 0.12, 1, 0.45); break;
-        case 1: noise(t, "highpass", 1200, 0.6, 0.18); tone(t, "triangle", 190, 0, 0, 0.35, 0.1); break;
-        case 2: [0, 0.012, 0.024].forEach(k => noise(t + k, "bandpass", 1400, 0.45, 0.03)); noise(t + 0.03, "bandpass", 1400, 0.5, 0.15); break;
-        case 3: noise(t, "highpass", 8000, 0.25, 0.04); break;
-        case 4: noise(t, "highpass", 7000, 0.2, 0.3); break;
-        case 5: tone(t, "sine", 220, 110, 0.2, 0.6, 0.3); break;
-        case 6: tone(t, "sawtooth", root, 0, 0, 0.45, 0.28, 900); break;
-        case 7: tone(t, "square", root * 4 * Math.pow(2, SCALE[step % SCALE.length] / 12), 0, 0, 0.12, 0.22, 3000); break;
-      }
-    }
-
-    // ---------- Sequencer (lookahead scheduling for tight timing) ----------
-    let playing = false, step = 0, nextTime = 0, timer;
-    const bpmEl = document.getElementById("bpm");
-    function scheduler() {
-      while (nextTime < ctx.currentTime + 0.1) {
-        const s = step, t = nextTime;
-        grid.forEach((row, r) => { if (row[s]) play(r, t, s); });
-        setTimeout(() => highlight(s), Math.max(0, (t - ctx.currentTime) * 1000));
-        nextTime += 60 / +bpmEl.value / 4;
-        step = (step + 1) % STEPS;
-        if (step === 0) bar++;
-      }
-    }
-    let lastStep = -1;
-    function highlight(s) {
-      if (!playing) return;
-      if (lastStep >= 0) { cells.forEach(row => row[lastStep].classList.remove("now")); dots[lastStep].classList.remove("now"); }
-      cells.forEach(row => row[s].classList.add("now")); dots[s].classList.add("now");
-      lastStep = s;
-    }
-    const playBtn = document.getElementById("play");
-    function toggle() {
-      ensureAudio();
-      playing = !playing;
-      playBtn.classList.toggle("on", playing);
-      playBtn.textContent = playing ? "■ Stop" : "▶ Play";
-      if (playing) {
-        step = 0; bar = 0; nextTime = ctx.currentTime + 0.05;
-        timer = setInterval(scheduler, 25);
-      } else {
-        clearInterval(timer);
-        if (lastStep >= 0) { cells.forEach(row => row[lastStep].classList.remove("now")); dots[lastStep].classList.remove("now"); lastStep = -1; }
-      }
-    }
-    playBtn.onclick = toggle;
-    addEventListener("keydown", e => {
-      if (e.code === "Space" && e.target.tagName !== "SELECT") { e.preventDefault(); toggle(); }
-    });
-
-    // ---------- Controls ----------
-    const bpmVal = document.getElementById("bpmVal");
-    bpmEl.oninput = () => bpmVal.textContent = bpmEl.value;
-
-    function loadRows(rows) { grid = rows.map(str => str.padEnd(STEPS, ".").split("").map(c => c === "x")); render(); }
-    document.getElementById("preset").onchange = e => {
-      const p = PRESETS[e.target.value]; if (!p) return;
-      loadRows(p.rows); bpmEl.value = p.bpm; bpmVal.textContent = p.bpm;
-      toast("Loaded " + e.target.selectedOptions[0].text);
-      e.target.value = "";
-    };
-    document.getElementById("clear").onclick = () => { grid = ROWS.map(() => Array(STEPS).fill(false)); render(); };
-    document.getElementById("random").onclick = () => {
-      const odds = [0.25, 0, 0.08, 0.6, 0.1, 0.08, 0.25, 0.25];
-      grid = ROWS.map((_, r) => Array.from({ length: STEPS }, (_, s) => Math.random() < odds[r]));
-      grid[0][0] = true;
-      grid[1][4] = grid[1][12] = Math.random() < 0.8;
-      render(); toast("🎲 Fresh beat");
+    // ================= SINGLE RACE =================
+    const lights = [...document.querySelectorAll(".light")];
+    let racing = false;
+    $("raceBtn").onclick = () => {
+      if (racing) return;
+      racing = true;
+      $("result").innerHTML = "";
+      $("headline").textContent = "Formation lap complete…";
+      lights.forEach(l => l.classList.remove("on"));
+      lights.forEach((l, k) => setTimeout(() => l.classList.add("on"), 600 + k * 700));
+      const outAt = 600 + 5 * 700 + 400 + Math.random() * 1200;
+      setTimeout(() => {
+        lights.forEach(l => l.classList.remove("on"));
+        $("headline").textContent = "LIGHTS OUT AND AWAY WE GO!";
+        const order = raceOnce(lastModel.sc, lastModel.chaos);
+        const html = order.map((o, k) => {
+          const d = DRIVERS[o.i];
+          return `<div class="row ${o.dnf ? "dnf" : ""}" style="--tc:${d.color}">
+            <b>${o.dnf ? "DNF" : "P" + (k + 1)}</b><span>${d.name}</span><small>${d.team}</small></div>`;
+        }).join("");
+        $("result").innerHTML = html;
+        const rows = [...$("result").children];
+        rows.forEach((row, k) => setTimeout(() => row.classList.add("show"), 300 + k * 110));
+        setTimeout(() => {
+          const w = DRIVERS[order[0].i];
+          const antPos = order.findIndex(o => o.i === 0);
+          const champ = (!order[antPos].dnf && antPos < 9) || (order[0].i !== 1 && order[0].i !== 2);
+          $("headline").innerHTML = `🏆 ${w.name} wins in Mexico!` +
+            (champ ? `<br><small style="color:#27F4D2">Antonelli is the 2026 World Champion</small>`
+                   : `<br><small style="color:var(--muted)">The title fight goes on to Brazil</small>`);
+          racing = false;
+        }, 300 + rows.length * 110);
+      }, outAt);
     };
 
-    // Share: encode the whole beat into the link
-    function encode() {
-      return bpmEl.value + "-" + grid.map(row => parseInt(row.map(b => b ? 1 : 0).join(""), 2).toString(16).padStart(4, "0")).join("");
+    // ================= COUNTDOWN =================
+    function tick() {
+      let ms = RACE_START - Date.now();
+      if (ms <= 0) { $("countdown").innerHTML = `<div class="cd"><b>🏁</b><small>Race day</small></div>`; return; }
+      const parts = [["days", 864e5], ["hrs", 36e5], ["min", 6e4], ["sec", 1e3]].map(([l, u]) => {
+        const v = Math.floor(ms / u); ms -= v * u; return [v, l];
+      });
+      $("countdown").innerHTML = parts.map(([v, l]) => `<div class="cd"><b>${String(v).padStart(2, "0")}</b><small>${l}</small></div>`).join("");
     }
-    function decode(h) {
-      const m = /^(\d+)-([0-9a-f]{32})$/.exec(h); if (!m) return false;
-      bpmEl.value = m[1]; bpmVal.textContent = m[1];
-      grid = ROWS.map((_, r) => parseInt(m[2].slice(r * 4, r * 4 + 4), 16).toString(2).padStart(16, "0").split("").map(c => c === "1"));
-      render(); return true;
-    }
-    document.getElementById("share").onclick = async () => {
-      const url = location.href.split("#")[0] + "#" + encode();
-      try { history.replaceState(null, "", url); } catch (e) {}
-      try { await navigator.clipboard.writeText(url); toast("Link copied — send it to a friend!"); }
-      catch (e) { toast("Copy the link from your address bar"); }
-    };
+    tick(); setInterval(tick, 1000);
 
-    const toastEl = document.getElementById("toast");
-    let toastT;
-    function toast(msg) {
-      toastEl.textContent = msg; toastEl.classList.add("show");
-      clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove("show"), 1800);
-    }
-
-    // ---------- Visualizer ----------
-    const viz = document.getElementById("viz"), vctx = viz.getContext("2d");
-    function drawViz() {
-      const w = viz.width = viz.clientWidth * devicePixelRatio;
-      const h = viz.height = viz.clientHeight * devicePixelRatio;
-      vctx.clearRect(0, 0, w, h);
-      const bars = 64, bw = w / bars;
-      const data = new Uint8Array(analyser ? analyser.frequencyBinCount : bars);
-      if (analyser) analyser.getByteFrequencyData(data);
-      const grad = vctx.createLinearGradient(0, 0, w, 0);
-      grad.addColorStop(0, "#8b5cf6"); grad.addColorStop(0.5, "#22d3ee"); grad.addColorStop(1, "#f472b6");
-      vctx.fillStyle = grad;
-      for (let i = 0; i < bars; i++) {
-        const v = data[Math.floor(i * data.length / bars)] / 255;
-        const bh = Math.max(3 * devicePixelRatio, v * h * 0.9);
-        vctx.globalAlpha = 0.35 + v * 0.65;
-        vctx.fillRect(i * bw + bw * 0.15, (h - bh) / 2, bw * 0.7, bh);
-      }
-      requestAnimationFrame(drawViz);
-    }
-    drawViz();
-
-    // Start with a shared beat from the link, or a preset
-    if (!decode(location.hash.slice(1))) loadRows(PRESETS.boombap.rows);
+    update();
   </script>
 </body>
 </html>
